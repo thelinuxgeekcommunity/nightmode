@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Night Mode</string>
+        <string name="licence_info" translatable="true">
+    <![CDATA[
+        <p>Night Mode is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.</p>
+
+        <p>Night Mode is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License Version 3 for more details.</p>
+     	]]>
+    </string>
+    <string name="source_code">Source: https://github.com/jcjordyn130/nightmode</string>
+    <string name="developed_by">Developed by The Linux Geek (https://github.com/jcjordyn130)</string>
+    <string name="brightness">Brightness: </string>
+    <string name="action_about">About</string>
+    <string name="action_overlay_system">Overlay System Elements</string>
+    <string name="action_dark_theme">Dark theme</string>
+    <string name="noti_text">Night Mode is running</string>
+</resources>
