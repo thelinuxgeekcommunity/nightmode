@@ -1,22 +1,29 @@
-package tk.jordynsmediagroup.nightmode;
+package tk.jordynsmediagroup.nightmode.activity;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import tk.jordynsmediagroup.nightmode.activity.AboutActivity;
+import tk.jordynsmediagroup.nightmode.C;
+import tk.jordynsmediagroup.nightmode.R;
 import tk.jordynsmediagroup.nightmode.receiver.TileReceiver;
 import tk.jordynsmediagroup.nightmode.services.OverlayService;
 import tk.jordynsmediagroup.nightmode.utils.Settings;
@@ -28,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isRunning = false; // Turn off overlay here
     private static final int OVERLAY_PERMISSION_REQ_CODE = 1001; // Permission code for total screen overlay
     private Menu mMenu; // Menu instance
+    private EditText color; // Color text box
 
     /* On create */
     @Override
@@ -38,13 +46,43 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        /* Put the color back in the textbox (Black/#000000 is the default) */
+        color = (EditText) findViewById(R.id.color);
+        color.setText(mSettings.getString(Settings.KEY_COLOR, "#000000"));
+
         /* Start Overlay service here */
         Intent i = new Intent(this, OverlayService.class);
         i.putExtra(C.EXTRA_ACTION, C.ACTION_CHECK);
         startService(i);
 
+        /* Setup the color text box listener */
+        color.addTextChangedListener(new TextWatcher() {
+            public void afterTextChanged(Editable s) {
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                try {
+                    // Detect if the color entered is a valid color
+                    Color.parseColor(String.valueOf(color.getText()));
+                    // If it's valid store it in the settings
+                    mSettings.putString(Settings.KEY_COLOR, String.valueOf(color.getText()));
+                } catch (IllegalArgumentException iae) {
+                    // Ignore this, If we don't this will cause FC's
+                } catch (StringIndexOutOfBoundsException iae) {
+                    // Ignore this, If we don't this will cause FC's
+                }
+
+            }
+        });
+
         /* Setup the toggle button */
-        ToggleButton toggle = (ToggleButton) findViewById(R.id.toggleButton);
+        final ToggleButton toggle = (ToggleButton) findViewById(R.id.toggleButton);
+        if (isRunning) {
+            toggle.setChecked(true);
+        }
         toggle.setOnCheckedChangeListener(new ToggleButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
@@ -65,7 +103,8 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra(C.EXTRA_ACTION, C.ACTION_STOP);
                     stopService(intent);
                     isRunning = false;
-                }
+            }
+
             }
         });
 
@@ -106,10 +145,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart(); // Call onStart on the superclass
-        if (mReceiver == null) { mReceiver = new MessageReceiver(); } // Start a new message receiver, if not already started.
+        mReceiver = new MessageReceiver();  // Start a new message receiver, if not already started.
         IntentFilter filter = new IntentFilter(); // Register it with the IntentFilter
         filter.addAction(MainActivity.class.getCanonicalName());
         registerReceiver(mReceiver, filter);
+
     }
 
     @Override
@@ -117,7 +157,14 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         final TextView textView = (TextView) findViewById(R.id.textView2); // Find the TextView here
         textView.setText(getString(R.string.brightness) + " " + mSettings.getInt(Settings.KEY_BRIGHTNESS, 50)); // Set the brightness text
+        if (mReceiver == null) {
+            mReceiver = new MessageReceiver();  // Start a new message receiver, if not already started.
+            IntentFilter filter = new IntentFilter(); // Register it with the IntentFilter
+            filter.addAction(MainActivity.class.getCanonicalName());
+            registerReceiver(mReceiver, filter);
+        }
     }
+
     private class MessageReceiver extends BroadcastReceiver {
         /* Setup the toggle button */
         ToggleButton toggle = (ToggleButton) findViewById(R.id.toggleButton);
@@ -160,20 +207,37 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onPause() {
-        super.onPause(); // Call onPause from the superclass
         mSettings.putInt(Settings.KEY_BRIGHTNESS, brightness.getProgress()); // Save the brightness
+        try {
+            // Save the color
+            Color.parseColor(String.valueOf(color.getText()));
+            // If it's valid store it in the settings
+            mSettings.putString(Settings.KEY_COLOR, String.valueOf(color.getText()));
+        } catch (IllegalArgumentException iae) {
+            // Ignore this, If we don't this will cause FC's
+        }
+        super.onPause(); // Call onPause from the superclass
     }
 
     @Override
     public void onStop() {
         mSettings.putInt(Settings.KEY_BRIGHTNESS, brightness.getProgress()); // Save the brightness
+        try {
+            // Save the color
+            Color.parseColor(String.valueOf(color.getText()));
+            // If it's valid store it in the settings
+            mSettings.putString(Settings.KEY_COLOR, String.valueOf(color.getText()));
+        } catch (IllegalArgumentException iae) {
+            // Ignore this, If we don't this will cause FC's
+        }
         super.onStop(); // Call onStop from the superclass
-        unregisterReceiver(mReceiver); // Unregister mReceiver from the IntentFilter
+        unregisterReceiver(mReceiver);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the Action Bar menu here
+        super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.settings, menu);
         return super.onCreateOptionsMenu(menu);
     }
@@ -186,18 +250,22 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, AboutActivity.class));
             return true;
         } else if (id == R.id.action_overlay_system) {
-            // Enable System Overlay here
             if ( menuItem.isChecked() ) {
+                // Disable it here if it's enabled
                 mSettings.putBoolean(Settings.KEY_OVERLAY_SYSTEM, false);
                 menuItem.setChecked(false);
+                return true;
             } else {
+                // Enable it here if it's disabled
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    // If were on marshmallow or above request said permission
                     if (!android.provider.Settings.canDrawOverlays(this)) {
                         Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                                 Uri.parse("package:" + getPackageName()));
                         startActivityForResult(intent, OVERLAY_PERMISSION_REQ_CODE);
                     }
                 } else {
+                    // Were on <5.1. So no need for the permission, we already got it. Just enable system overlay.
                     mSettings.putBoolean(Settings.KEY_OVERLAY_SYSTEM, true);
                     menuItem.setChecked(true);
                 }
@@ -205,5 +273,13 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return false;
+    }
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
+        if (mSettings.getBoolean(Settings.KEY_OVERLAY_SYSTEM, false)) {
+            menu.findItem(R.id.action_overlay_system).setChecked(true);
+        }
+        return true;
     }
 }

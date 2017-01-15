@@ -1,0 +1,16 @@
+Version 1.0:
+First release
+
+Version 1.1:
+Changed the theme from Light to Dark
+Added a option to change the color of the overlay
+Moved the toggle button to the bottom
+Changed the text in About
+Fixed some bugs
+Added some buildTypes and ProductFlavors
+Added the makerelease.sh script from Simple IRC
+Added the keystore code
+Made About into a dialog from a normal activity
+Made the "Overlay System Elements" able to be disabled on lollipop and below
+Fixed the notifcation icon and added a Large Icon
+Fixed the superclass being called to early in onPause()

@@ -1,20 +1,64 @@
 apply plugin: 'com.android.application'
+// Load the keystore properties from the root of the project
+def keystorePropertiesFile = rootProject.file("keystore.properties")
 
 android {
+    if ( keystorePropertiesFile.exists() ) {
+        signingConfigs {
+            KeyConfig {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                // Set up the key properties from the loaded file(s)
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
     compileSdkVersion 25
     buildToolsVersion "25.0.0"
     defaultConfig {
         applicationId "tk.jordynsmediagroup.nightmode"
         minSdkVersion 11
-        targetSdkVersion 25
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion 21
+        versionCode 11
+        versionName "1.1"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
+            // Build config for a release build
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // If the keystore and keystore properties exist then add that signing config
+            if ( keystorePropertiesFile.exists() ) { signingConfig signingConfigs.KeyConfig }
+            pseudoLocalesEnabled true
+            zipAlignEnabled true
+            debuggable false
+            jniDebuggable false
+            renderscriptDebuggable false
+            pseudoLocalesEnabled true
+        }
+        debug {
+            // Build config for a debug build
+            applicationIdSuffix = '.debug'
+            jniDebuggable true
+            renderscriptDebuggable true
+            minifyEnabled true
+            zipAlignEnabled true
+        }
+    }
+    productFlavors {
+        normal {
+            // Product flavor for a generic build
+            minSdkVersion 11
+            targetSdkVersion 21
+        }
+        fdroid {
+            // Product flavor for a f-droid build
+            applicationIdSuffix '.fdroid'
+            minSdkVersion 11
+            targetSdkVersion 21
         }
     }
 }

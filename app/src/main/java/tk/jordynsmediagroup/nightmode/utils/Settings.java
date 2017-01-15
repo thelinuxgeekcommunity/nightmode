@@ -9,7 +9,7 @@ public class Settings {
 
     public static final String KEY_BRIGHTNESS = "brightness", KEY_ALIVE = "alive",
             KEY_OVERLAY_SYSTEM = "overlay_system", KEY_FIRST_RUN = "first_run",
-            KEY_DARK_THEME = "dark_theme";
+            KEY_COLOR = "color", KEY_OVERLAY_STATUSBAR="overlay_statusbar";
 
     private static Settings sInstance;
 

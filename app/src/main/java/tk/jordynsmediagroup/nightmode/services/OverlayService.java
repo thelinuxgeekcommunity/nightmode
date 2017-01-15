@@ -7,19 +7,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.v7.app.NotificationCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 
 import tk.jordynsmediagroup.nightmode.C;
-import tk.jordynsmediagroup.nightmode.MainActivity;
+import tk.jordynsmediagroup.nightmode.activity.MainActivity;
 import tk.jordynsmediagroup.nightmode.R;
 import tk.jordynsmediagroup.nightmode.utils.Settings;
 import tk.jordynsmediagroup.nightmode.utils.Utility;
@@ -33,6 +35,7 @@ public class OverlayService extends Service {
     private Notification mNoti;
     private Settings mSettings; // Settings instance
     private boolean enableOverlaySystem; // Enable overlay or not?
+    private boolean enableOverlayStatusBar; // Enable status bar overlay or not?
     private LinearLayout mLayout; // Layout
     private WindowManager.LayoutParams mLayoutParams; // Layout parameters
     private static final int NOTIFICATION_NO = 1024;
@@ -41,10 +44,11 @@ public class OverlayService extends Service {
         // Create notification here
         NotificationCompat.Builder builder =
                 (NotificationCompat.Builder) new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setSmallIcon(R.drawable.notifcation)
+                        .setLargeIcon(BitmapFactory.decodeResource(getResources(),
+                                R.mipmap.ic_launcher))
                         .setContentTitle(getString(R.string.app_name))
                         .setContentText(getString(R.string.noti_text));
-
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
@@ -63,7 +67,7 @@ public class OverlayService extends Service {
 
     private void cancelNotification() {
         try {
-            mNotificationManager.cancelAll(); // Cancel all notifications from the app "Night Mode"
+            mNotificationManager.cancel(0);
         } catch (Exception e) {
             e.printStackTrace(); // Print stacktrace upon Exception
             onDestroy(); // Call onDestroy
@@ -148,16 +152,11 @@ public class OverlayService extends Service {
     /* Create Overlay Here */
     private void createOverlayView() {
         mLayoutParams = new WindowManager.LayoutParams();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            mLayoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
-        } else {
-            mLayoutParams.type = !enableOverlaySystem ? WindowManager.LayoutParams.TYPE_TOAST : WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
-        }
-        mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        // These flags get set regardless of the settings.
+        mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE  | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE  | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        // Set the type as either a toast or a system overlay depending on the settings
+        mLayoutParams.type = !enableOverlaySystem ? WindowManager.LayoutParams.TYPE_TOAST : WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
         mLayoutParams.format = PixelFormat.TRANSPARENT;
-        // TODO Automatically change by listening to rotating
         int maxSize = Math.max(Utility.getTrueScreenHeight(getApplicationContext()), Utility.getTrueScreenWidth(getApplicationContext()));
         mLayoutParams.height = maxSize + 200;
         mLayoutParams.width = maxSize + 200;
@@ -171,7 +170,7 @@ public class OverlayService extends Service {
                             ViewGroup.LayoutParams.MATCH_PARENT
                     )
             );
-            mLayout.setBackgroundColor(Color.parseColor("#000000"));
+            mLayout.setBackgroundColor(Color.parseColor(mSettings.getString(Settings.KEY_COLOR, "#000000")));
             mLayout.setAlpha(0f);
         }
 
